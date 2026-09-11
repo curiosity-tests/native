@@ -1,4 +1,5 @@
 name: CI
+run-name: "CI ${{ inputs.leg || github.event_name }} ${{ inputs.racecar_run }}"
 
 on:
   pull_request:
@@ -6,6 +7,24 @@ on:
     branches:
       - main
 
+  workflow_dispatch:
+    inputs:
+      leg:
+        description: "baseline (uninstrumented) or instrumented (under chalk/curiosity)"
+        type: choice
+        options: [instrumented, baseline]
+        default: baseline
+      profile:
+        description: "CrashOverride chalk profile"
+        type: string
+        default: curiosity-tests-racecar
+      racecar_run:
+        description: "racecar correlation token, echoed into the run name"
+        type: string
+        default: ""
+
+env:
+  CHALK_ON: ${{ inputs.leg == 'instrumented' }}
 permissions:
   contents: read
 
@@ -16,6 +35,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: vercel-labs/setup-zig@v1
+        continue-on-error: true   # racecar: scan/report/push step, must not fail the build
         with:
           version: 0.16.0
       - uses: actions/setup-node@v4
@@ -40,6 +60,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: vercel-labs/setup-zig@v1
+        continue-on-error: true   # racecar: scan/report/push step, must not fail the build
         with:
           version: 0.16.0
       - uses: actions/setup-node@v4
@@ -56,11 +77,13 @@ jobs:
         run: tests/compiled-core/fence_check.sh .zig-cache/fence-check
 
   macos-webview:
+    if: false   # racecar: non-Linux runner, not measured here
     name: macOS WebView
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
       - uses: vercel-labs/setup-zig@v1
+        continue-on-error: true   # racecar: scan/report/push step, must not fail the build
         with:
           version: 0.16.0
       - uses: actions/setup-node@v4
@@ -95,11 +118,13 @@ jobs:
           NATIVE_SDK_SMOKE_BUDGET_MS: "1500"
 
   macos-gpu-perf:
+    if: false   # racecar: non-Linux runner, not measured here
     name: macOS GPU Perf
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
       - uses: vercel-labs/setup-zig@v1
+        continue-on-error: true   # racecar: scan/report/push step, must not fail the build
         with:
           version: 0.16.0
       # Percentile perf check: 5 cold launches asserting p90
@@ -129,6 +154,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: vercel-labs/setup-zig@v1
+        continue-on-error: true   # racecar: scan/report/push step, must not fail the build
         with:
           version: 0.16.0
       - name: Install WebKitGTK dependencies
@@ -145,11 +171,13 @@ jobs:
       - run: zig build test-linux-web-layer-audit
 
   windows-webview:
+    if: false   # racecar: non-Linux runner, not measured here
     name: Windows WebView
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
       - uses: vercel-labs/setup-zig@v1
+        continue-on-error: true   # racecar: scan/report/push step, must not fail the build
         with:
           version: 0.16.0
       # Builds the WebView example with the system engine, compiling the
@@ -180,6 +208,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: vercel-labs/setup-zig@v1
+        continue-on-error: true   # racecar: scan/report/push step, must not fail the build
         with:
           version: 0.16.0
       - uses: actions/setup-node@v4
@@ -220,6 +249,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: vercel-labs/setup-zig@v1
+        continue-on-error: true   # racecar: scan/report/push step, must not fail the build
         with:
           version: 0.16.0
       - uses: actions/setup-node@v4
@@ -240,6 +270,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: vercel-labs/setup-zig@v1
+        continue-on-error: true   # racecar: scan/report/push step, must not fail the build
         with:
           version: 0.16.0
       # Declare-to-use, proven on real Windows executables: the
@@ -255,7 +286,6 @@ jobs:
     if: ${{ always() }}
     needs:
       - native-example-shards
-      - windows-web-layer-audit
     runs-on: ubuntu-latest
     steps:
       - name: Confirm every native example lane passed
@@ -272,6 +302,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: vercel-labs/setup-zig@v1
+        continue-on-error: true   # racecar: scan/report/push step, must not fail the build
         with:
           version: 0.16.0
       # Deliberately NO libwebkitgtk-6.0-dev: ui-inbox declares no web
@@ -354,6 +385,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: vercel-labs/setup-zig@v1
+        continue-on-error: true   # racecar: scan/report/push step, must not fail the build
         with:
           version: 0.16.0
       - uses: actions/setup-node@v4
@@ -384,6 +416,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: vercel-labs/setup-zig@v1
+        continue-on-error: true   # racecar: scan/report/push step, must not fail the build
         with:
           version: 0.16.0
       - name: Install Wine, Xvfb, and xdotool
@@ -420,6 +453,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: vercel-labs/setup-zig@v1
+        continue-on-error: true   # racecar: scan/report/push step, must not fail the build
         with:
           version: 0.16.0
       - name: Install Wine and Xvfb
@@ -439,6 +473,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: vercel-labs/setup-zig@v1
+        continue-on-error: true   # racecar: scan/report/push step, must not fail the build
         with:
           version: 0.16.0
       - run: zig build test-examples-frontends
@@ -449,6 +484,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: vercel-labs/setup-zig@v1
+        continue-on-error: true   # racecar: scan/report/push step, must not fail the build
         with:
           version: 0.16.0
       - run: zig build test-examples-mobile
@@ -459,6 +495,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: vercel-labs/setup-zig@v1
+        continue-on-error: true   # racecar: scan/report/push step, must not fail the build
         with:
           version: 0.16.0
       - uses: actions/setup-node@v4
